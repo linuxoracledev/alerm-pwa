@@ -23,3 +23,11 @@ pwa-alarm/
 │── icon-192.png # PWA app icon
 │── icon-512.png # PWA app icon
 │── README.md # Project info
+
+---
+
+## 🚀 How to Run
+1. Clone this repo:
+   ```bash
+   git clone https://github.com/<your-username>/pwa-alarm.git
+   cd pwa-alarm
