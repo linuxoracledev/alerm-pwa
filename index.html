@@ -1,80 +1,124 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
+    <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Configurable Work Alarm</title>
+    <title>Workweek Alarm</title>
     <link rel="manifest" href="manifest.json" />
     <meta name="theme-color" content="#0b72ff" />
     <style>
       body {
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+        font-family: "Segoe UI", Roboto, sans-serif;
         margin: 0;
-        background: #f5f7fb;
-        color: #0b1726;
+        background: linear-gradient(to bottom right, #0b72ff, #3ec1d3);
+        color: #fff;
       }
-      .wrap {
+      .container {
         max-width: 720px;
-        margin: 28px auto;
-        padding: 20px;
-        background: #fff;
-        border-radius: 12px;
-        box-shadow: 0 6px 24px rgba(8, 15, 25, 0.06);
+        margin: 40px auto;
+        padding: 24px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(12px);
       }
       h1 {
-        margin: 0 0 6px;
-        font-size: 20px;
+        text-align: center;
+        margin-bottom: 20px;
+        font-size: 28px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
       }
       label {
         display: block;
-        margin: 4px 0;
+        margin: 8px 0;
       }
       input[type="number"] {
-        width: 60px;
-        padding: 4px;
-        margin-left: 4px;
+        width: 70px;
+        padding: 6px;
+        border-radius: 6px;
+        border: none;
+      }
+      .day {
+        margin-right: 8px;
       }
       .controls {
+        margin-top: 16px;
         display: flex;
-        gap: 8px;
-        margin-top: 12px;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
       }
       button {
-        padding: 10px 12px;
-        border-radius: 8px;
-        border: 1px solid #e2e8f0;
-        background: #0b72ff;
-        color: white;
+        padding: 10px 18px;
+        border-radius: 10px;
+        border: none;
+        background: #fff;
+        color: #0b72ff;
+        font-weight: bold;
         cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        transition: transform 0.15s ease;
+      }
+      button:hover {
+        transform: scale(1.05);
       }
       button.ghost {
         background: transparent;
-        color: #0b72ff;
-        border: 1px solid #cfe0ff;
+        color: #fff;
+        border: 1px solid #fff;
       }
       .status {
-        margin-top: 14px;
-        font-weight: 600;
+        margin-top: 16px;
+        font-weight: bold;
+        text-align: center;
       }
       .log {
-        margin-top: 8px;
-        border-radius: 8px;
-        padding: 10px;
-        background: #fbfdff;
-        border: 1px solid #eef6ff;
+        margin-top: 12px;
+        border-radius: 10px;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.1);
         max-height: 220px;
         overflow: auto;
         font-family: monospace;
         font-size: 13px;
       }
-      .small {
-        font-size: 13px;
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
+      .modal-content {
+        background: #fff;
+        color: #0b72ff;
+        padding: 24px;
+        border-radius: 12px;
+        min-width: 260px;
+        text-align: center;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        animation: pop 0.3s ease;
+      }
+      @keyframes pop {
+        0% {
+          transform: scale(0.5);
+          opacity: 0;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
       }
     </style>
   </head>
   <body>
-    <div class="wrap">
-      <h1>Configurable Work Alarm</h1>
+    <div class="container">
+      <h1>Workweek Alarm ⏰</h1>
 
       <label
         >Start Hour:
@@ -98,18 +142,23 @@
       <div class="controls">
         <button id="enableBtn">Enable & Schedule</button>
         <button id="disableBtn" class="ghost">Disable</button>
-        <button id="installBtn" class="ghost">Install (if available)</button>
+        <button id="installBtn" class="ghost">Install App</button>
       </div>
 
       <div class="status" id="status">
         Status: <span id="st-text">idle</span>
       </div>
-      <div class="small muted" id="note">
-        Allow notifications and install PWA for background alerts. Alarms work
-        best while the page is open.
-      </div>
       <div class="log" id="log"></div>
     </div>
+
+    <div class="modal" id="alarmModal">
+      <div class="modal-content">
+        <h3>⏰ Alarm!</h3>
+        <p id="alarmText">Time!</p>
+        <button onclick="closeModal()">OK</button>
+      </div>
+    </div>
+
     <script src="app.js"></script>
   </body>
 </html>

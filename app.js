@@ -7,8 +7,7 @@ const LOG = (msg) => {
 let alarmTimeouts = [];
 let registrationForSW;
 let deferredPrompt;
-
-const SETTINGS_KEY = "work-alarm-settings-v1";
+const SETTINGS_KEY = "work-alarm-settings-v2";
 
 function saveSettings(settings) {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
@@ -25,70 +24,29 @@ function getCurrentSettings() {
   const startHour = parseInt(document.getElementById("startHour").value);
   const endHour = parseInt(document.getElementById("endHour").value);
   const intervalMin = parseInt(document.getElementById("interval").value);
-  const dayEls = document.querySelectorAll(".day");
-  const days = [];
-  dayEls.forEach((d) => {
-    if (d.checked) days.push(parseInt(d.value));
-  });
+  const days = Array.from(document.querySelectorAll(".day"))
+    .filter((d) => d.checked)
+    .map((d) => parseInt(d.value));
   const settings = { startHour, endHour, intervalMin, days, enabled: true };
   saveSettings(settings);
   return settings;
 }
 
-async function init() {
-  if ("serviceWorker" in navigator) {
-    try {
-      registrationForSW = await navigator.serviceWorker.register("sw.js");
-      LOG("Service worker registered.");
-    } catch (e) {
-      LOG("Service worker register failed: " + e);
-    }
-  } else LOG("Service workers not supported.");
-
-  window.addEventListener("beforeinstallprompt", (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    LOG("Install prompt available.");
-    document.getElementById("installBtn").style.display = "inline-block";
-  });
-
-  document.getElementById("enableBtn").addEventListener("click", enableAlarms);
-  document
-    .getElementById("disableBtn")
-    .addEventListener("click", disableAlarms);
-  document.getElementById("installBtn").addEventListener("click", async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const resp = await deferredPrompt.userChoice;
-      LOG("Install choice: " + resp.outcome);
-      deferredPrompt = null;
-    }
-  });
-
-  restoreAndSchedule();
-}
-
 function updateStatus(text) {
   document.getElementById("st-text").innerText = text;
 }
-
-async function ensureNotificationPermission() {
-  if (!("Notification" in window)) {
-    alert("Notifications not supported");
-    return false;
-  }
-  if (Notification.permission === "granted") return true;
-  if (Notification.permission === "denied") {
-    alert("Enable notifications from browser");
-    return false;
-  }
-  const p = await Notification.requestPermission();
-  return p === "granted";
-}
-
 function clearTimeouts() {
   alarmTimeouts.forEach((id) => clearTimeout(id));
   alarmTimeouts = [];
+}
+
+function showModal(msg) {
+  const modal = document.getElementById("alarmModal");
+  document.getElementById("alarmText").innerText = msg;
+  modal.style.display = "flex";
+}
+function closeModal() {
+  document.getElementById("alarmModal").style.display = "none";
 }
 
 function generateAlarms(settings, daysAhead = 2) {
@@ -105,7 +63,7 @@ function generateAlarms(settings, daysAhead = 2) {
       0
     );
     if (!settings.days.includes(date.getDay())) continue;
-    for (let h = settings.startHour; h < settings.endHour; h++) {
+    for (let h = settings.startHour; h < settings.endHour; h++)
       for (let m = 0; m < 60; m += settings.intervalMin) {
         const t = new Date(
           date.getFullYear(),
@@ -118,16 +76,14 @@ function generateAlarms(settings, daysAhead = 2) {
         );
         if (t.getTime() >= Date.now()) arr.push(t.getTime());
       }
-    }
   }
-  arr.sort((a, b) => a - b);
-  return arr;
+  return arr.sort((a, b) => a - b);
 }
 
 function scheduleInPage(settings) {
   clearTimeouts();
   const times = generateAlarms(settings);
-  LOG("Scheduling " + times.length + " upcoming alarms (page-scope).");
+  LOG("Scheduling " + times.length + " alarms.");
   times.forEach((ts) => {
     const diff = ts - Date.now();
     if (diff <= 0) return;
@@ -136,19 +92,26 @@ function scheduleInPage(settings) {
   });
 }
 
-function fireAlarm(timestamp) {
-  const label = new Date(timestamp).toLocaleTimeString();
+function fireAlarm(ts) {
+  const label = new Date(ts).toLocaleTimeString();
   LOG("Alarm: " + label);
+  showModal("Time: " + label);
+
   if (registrationForSW && registrationForSW.showNotification) {
     registrationForSW
       .showNotification("Work Alarm", {
         body: "Time: " + label,
         tag: "work-alarm",
         renotify: true,
-        data: { timestamp },
+        data: { ts },
       })
       .catch((e) => LOG("sw showNotification fail: " + e));
-  } else new Notification("Work Alarm", { body: "Time: " + label });
+  } else if (
+    "Notification" in window &&
+    Notification.permission === "granted"
+  ) {
+    new Notification("Work Alarm", { body: "Time: " + label });
+  }
   playBeep();
 }
 
@@ -162,7 +125,7 @@ function playBeep() {
     const g = audioCtx.createGain();
     o.type = "sine";
     o.frequency.value = 880;
-    g.gain.value = 0.0005;
+    g.gain.value = 0.001;
     o.connect(g);
     g.connect(audioCtx.destination);
     o.start();
@@ -182,9 +145,18 @@ function setEnabledFlag(val) {
   s.enabled = !!val;
   saveSettings(s);
 }
-function getEnabledFlag() {
-  const s = loadSettings();
-  return s.enabled === true;
+async function ensureNotificationPermission() {
+  if (!("Notification" in window)) {
+    alert("Notifications not supported");
+    return false;
+  }
+  if (Notification.permission === "granted") return true;
+  if (Notification.permission === "denied") {
+    alert("Enable notifications in browser");
+    return false;
+  }
+  const p = await Notification.requestPermission();
+  return p === "granted";
 }
 
 async function enableAlarms() {
@@ -194,7 +166,7 @@ async function enableAlarms() {
   setEnabledFlag(true);
   updateStatus("enabled");
   scheduleInPage(settings);
-  LOG("Alarms enabled. Next few alarms scheduled in page.");
+  LOG("Alarms enabled.");
 }
 
 function disableAlarms() {
@@ -219,8 +191,41 @@ function restoreAndSchedule() {
   if (s.enabled) {
     updateStatus("enabled");
     scheduleInPage(s);
-    LOG("Restored enabled schedule from storage.");
+    LOG("Restored schedule from storage.");
   } else updateStatus("disabled");
+}
+
+async function init() {
+  if ("serviceWorker" in navigator) {
+    try {
+      registrationForSW = await navigator.serviceWorker.register("sw.js");
+      LOG("Service worker registered.");
+    } catch (e) {
+      LOG("Service worker register failed: " + e);
+    }
+  }
+
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById("installBtn").style.display = "inline-block";
+    LOG("Install prompt available.");
+  });
+
+  document.getElementById("enableBtn").addEventListener("click", enableAlarms);
+  document
+    .getElementById("disableBtn")
+    .addEventListener("click", disableAlarms);
+  document.getElementById("installBtn").addEventListener("click", async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const resp = await deferredPrompt.userChoice;
+      LOG("Install choice: " + resp.outcome);
+      deferredPrompt = null;
+    }
+  });
+
+  restoreAndSchedule();
 }
 
 init();
