@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Work Hours Alarm (Sun–Thu 10:00–18:00 every 20min)</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0b72ff"/>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;background:#f5f7fb;color:#0b1726}
+    .wrap{max-width:720px;margin:28px auto;padding:20px;background:#fff;border-radius:12px;box-shadow:0 6px 24px rgba(8,15,25,.06)}
+    h1{margin:0 0 6px;font-size:20px}
+    p.muted{color:#556;margin-top:4px}
+    .controls{display:flex;gap:8px;margin-top:12px}
+    button{padding:10px 12px;border-radius:8px;border:1px solid #e2e8f0;background:#0b72ff;color:white;cursor:pointer}
+    button.ghost{background:transparent;color:#0b72ff;border:1px solid #cfe0ff}
+    .status{margin-top:14px;font-weight:600}
+    .log{margin-top:8px;border-radius:8px;padding:10px;background:#fbfdff;border:1px solid #eef6ff;max-height:220px;overflow:auto;font-family:monospace;font-size:13px}
+    .small{font-size:13px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Work Hours Alarm</h1>
+    <p class="muted">Installs as a PWA. Rings every 20 minutes on <strong>Sun–Thu</strong> between <strong>10:00</strong> and <strong>18:00</strong>.</p>
+
+    <div class="controls">
+      <button id="enableBtn">Enable & Schedule</button>
+      <button id="disableBtn" class="ghost">Disable</button>
+      <button id="installBtn" class="ghost">Install (if available)</button>
+    </div>
+
+    <div class="status" id="status">Status: <span id="st-text">idle</span></div>
+    <div class="small muted" id="note">Note: To receive notifications when the app is closed, allow notifications and install the PWA. Background scheduling support varies by browser — see README inside package.</div>
+
+    <div class="log" id="log"></div>
+  </div>
+
+<script src="app.js"></script>
+</body>
+</html>
