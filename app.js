@@ -9,6 +9,9 @@ let registrationForSW;
 let deferredPrompt;
 const SETTINGS_KEY = "work-alarm-settings-v2";
 
+let nextAlarmTime = null;
+let countdownInterval = null;
+
 function saveSettings(settings) {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 }
@@ -84,6 +87,10 @@ function scheduleInPage(settings) {
   clearTimeouts();
   const times = generateAlarms(settings);
   LOG("Scheduling " + times.length + " alarms.");
+  if (times.length > 0) {
+    nextAlarmTime = times[0];
+    startCountdown();
+  }
   times.forEach((ts) => {
     const diff = ts - Date.now();
     if (diff <= 0) return;
@@ -92,16 +99,41 @@ function scheduleInPage(settings) {
   });
 }
 
+function startCountdown() {
+  if (countdownInterval) clearInterval(countdownInterval);
+  countdownInterval = setInterval(() => {
+    if (!nextAlarmTime) {
+      document.getElementById("countdown").innerText = "--:--";
+      return;
+    }
+    let diff = nextAlarmTime - Date.now();
+    if (diff <= 0) {
+      document.getElementById("countdown").innerText = "Now!";
+      return;
+    }
+    let mins = Math.floor(diff / 60000);
+    let secs = Math.floor((diff % 60000) / 1000);
+    document.getElementById("countdown").innerText =
+      String(mins).padStart(2, "0") + ":" + String(secs).padStart(2, "0");
+  }, 1000);
+}
+
 function fireAlarm(ts) {
   const label = new Date(ts).toLocaleTimeString();
   LOG("Alarm: " + label);
-  showModal("Time: " + label);
+  showModal("Time to rest your eyes 👀\nLook 20 feet away for 20 seconds");
+
+  // update next alarm
+  const settings = loadSettings();
+  const future = generateAlarms(settings);
+  const next = future.find((t) => t > Date.now());
+  nextAlarmTime = next || null;
 
   if (registrationForSW && registrationForSW.showNotification) {
     registrationForSW
-      .showNotification("Work Alarm", {
-        body: "Time: " + label,
-        tag: "work-alarm",
+      .showNotification("20-20-20 Reminder", {
+        body: "Look 20ft away for 20s 👀",
+        tag: "eye-care",
         renotify: true,
         data: { ts },
       })
@@ -110,7 +142,9 @@ function fireAlarm(ts) {
     "Notification" in window &&
     Notification.permission === "granted"
   ) {
-    new Notification("Work Alarm", { body: "Time: " + label });
+    new Notification("20-20-20 Reminder", {
+      body: "Look 20ft away for 20s 👀",
+    });
   }
   playBeep();
 }
