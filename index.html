@@ -7,21 +7,27 @@
     <link rel="manifest" href="manifest.json" />
     <meta name="theme-color" content="#0b72ff" />
     <style>
-      body {
-        font-family: "Segoe UI", Roboto, sans-serif;
-        margin: 0;
-        background: linear-gradient(to bottom right, #0b72ff, #3ec1d3);
-        color: #fff;
-      }
-      .container {
-        max-width: 720px;
-        margin: 40px auto;
-        padding: 24px;
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 16px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-        backdrop-filter: blur(12px);
-      }
+body {
+  font-family: 'Segoe UI', Roboto, sans-serif;
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center; /* center horizontally */
+  align-items: center;     /* center vertically */
+  background: linear-gradient(to bottom right, #0b72ff, #3ec1d3);
+  color: #fff;
+}
+
+.container {
+  width: 100%;
+  max-width: 480px;        /* main content width */
+  padding: 24px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  backdrop-filter: blur(12px);
+  box-sizing: border-box;
+}
       h1 {
         text-align: center;
         margin-bottom: 20px;
